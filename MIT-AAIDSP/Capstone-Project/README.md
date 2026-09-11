@@ -3,6 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-orange)
+![XGBoost](https://img.shields.io/badge/XGBoost-Selected%20Model-0b7285)
 ![Task](https://img.shields.io/badge/Task-Binary%20Classification-purple)
 
 Capstone project for the **MIT Applied AI & Data Science Program (AAIDSP)**. It builds and
@@ -34,7 +35,7 @@ defaulters as possible** without sacrificing overall performance.
 - **Language:** Python
 - **Data & compute:** pandas, numpy
 - **Visualisation:** matplotlib, seaborn
-- **Modelling:** scikit-learn (Logistic Regression, Decision Tree, Random Forest, GridSearchCV, RandomizedSearchCV)
+- **Modelling:** scikit-learn and XGBoost (nine model variants evaluated)
 - **Class imbalance:** imbalanced-learn (**SMOTE**)
 - **Explainability:** **SHAP**, permutation importance
 
@@ -43,13 +44,13 @@ defaulters as possible** without sacrificing overall performance.
 1. **Data inspection** — load HMEQ (5,960 rows, 12 predictors + `BAD` target); assess types and missingness.
 2. **Exploratory Data Analysis** — univariate, target, bivariate and multivariate analysis.
 3. **Preprocessing** — median/mode imputation with a **missingness flag** (`DEBTINC` is ~21% missing and its absence is itself predictive), IQR winsorization of outliers, feature engineering, and categorical encoding.
-4. **Train/test split & scaling** — stratified split preserving the ~20% default rate.
-5. **Class imbalance** — **SMOTE** applied on the training set to balance the ~80:20 class ratio.
-6. **Model building** — Logistic Regression, Decision Tree, and Random Forest.
-7. **Hyperparameter tuning** — Decision Tree via **GridSearchCV**, Random Forest via **RandomizedSearchCV**.
-8. **Model comparison & selection** — models compared on ROC-AUC, recall, F1 and accuracy.
-9. **Feature importance & explainability** — Random Forest importances, permutation importance, and **SHAP** values.
-10. **Threshold optimisation** — decision cutoff lowered below 0.5 to maximise recall on defaulters.
+4. **Leakage-resistant data partitioning** — stratified training, validation and untouched test sets.
+5. **Class imbalance** — **SMOTE applied inside the training pipeline only**, including during cross-validation.
+6. **Model building** — nine variants, including logistic regression, tree ensembles and gradient-boosting models.
+7. **Hyperparameter tuning** — stratified cross-validation with preprocessing and resampling refitted within each fold.
+8. **Model comparison & selection** — validation Average Precision and ROC-AUC used alongside default-class recall, precision and F1.
+9. **Feature importance & explainability** — model importance, permutation importance and **SHAP**, with explicit governance limitations.
+10. **Threshold optimisation** — threshold selected on validation data, locked, and then evaluated once on the untouched test set.
 11. **Business insights & recommendations** — risk profiles, operational recommendations, and a cost-benefit framework.
 
 ## Models Built
@@ -58,17 +59,16 @@ defaulters as possible** without sacrificing overall performance.
 |---|---|---|
 | Logistic Regression | — | Interpretable baseline (coefficients for adverse-action reasons) |
 | Decision Tree | GridSearchCV | Non-linear baseline |
-| **Random Forest (Tuned)** | RandomizedSearchCV | **Final selected model** |
+| Random Forest (Tuned) | Cross-validated tuning | Strong challenger |
+| **XGBoost (Tuned)** | Cross-validated tuning | **Final selected model** |
 
 ## Key Results
 
-- **Tuned Random Forest** selected as the final model — best ROC-AUC and recall while generalising
-  well under cross-validation.
-- **SMOTE** used to handle the class imbalance (~80:20 repay:default ratio).
-- **Decision threshold tuned** (below 0.5) to optimise **recall for the default class**, aligning
-  the model with the bank's asymmetric cost structure.
-- **SHAP** and Logistic Regression coefficients provide per-decision explanations, supporting
-  regulatory compliance (e.g. adverse-action reasons under the Equal Credit Opportunity Act).
+- **Tuned XGBoost** selected using validation evidence and a pre-defined operating rule.
+- At the locked **0.239 threshold**, the untouched test set produced **ROC-AUC 0.954**, **Average Precision 0.878**, **recall 0.824**, **precision 0.751**, **F1 0.786**, and **accuracy 0.910**.
+- The confusion matrix was **TN 889, FP 65, FN 42, TP 196** on 1,192 test observations.
+- **SMOTE** was used only within training pipelines to prevent information leakage.
+- **SHAP** supports interpretation but does not by itself establish regulatory compliance; deployment would also require validated reason codes, fairness testing, monitoring and legal review.
 - Strongest default drivers include prior delinquencies/derogatory reports, debt-to-income ratio
   (and whether it is disclosed), and length of credit history.
 
@@ -84,7 +84,7 @@ defaulters as possible** without sacrificing overall performance.
 ## How to Reproduce
 
 ```bash
-pip install pandas numpy matplotlib seaborn scikit-learn imbalanced-learn shap
+pip install pandas numpy matplotlib seaborn scipy scikit-learn imbalanced-learn xgboost shap
 jupyter notebook Capstone_Project_Loan_Default_Prediction_Full_Code_Final_submission.ipynb
 ```
 
